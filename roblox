@@ -1,11 +1,261 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="refresh" content="0;url=https://rb.gy/wzzypg">
-  <title>Redirecting...</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Cursed Forest - D&D Adventure</title>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Georgia', serif;
+    background: linear-gradient(135deg, #2c3e50, #4ca1af);
+    color: #f0f0f0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  #game {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    max-width: 600px;
+    margin: 2rem auto;
+    background: rgba(0,0,0,0.7);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 0 10px #222;
+  }
+  #story {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+  #choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  button.choice {
+    background: #2980b9;
+    border: none;
+    color: #f0f0f0;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    flex: 1 1 48%;
+    font-weight: bold;
+    transition: background 0.3s;
+  }
+  button.choice:hover {
+    background: #3498db;
+  }
+  footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    color: #ccc;
+    font-family: 'Courier New', monospace;
+    user-select: none;
+  }
+</style>
 </head>
 <body>
-  <p>If you are not redirected automatically, <a href="https://rb.gy/wzzypg">click here</a>.</p>
+  <div id="game">
+    <div id="story"></div>
+    <div id="choices"></div>
+  </div>
+  <footer>Made by Harry Street</footer>
+
+<script>
+(() => {
+  const storyEl = document.getElementById('story');
+  const choicesEl = document.getElementById('choices');
+
+  // Player state
+  let player = {
+    hp: 10,
+    gold: 0,
+    inventory: [],
+    location: 'start',
+  };
+
+  // Utility: show story text
+  function addStory(text) {
+    const p = document.createElement('p');
+    p.textContent = text;
+    storyEl.appendChild(p);
+    storyEl.scrollTop = storyEl.scrollHeight;
+  }
+
+  // Utility: clear choices
+  function clearChoices() {
+    choicesEl.innerHTML = '';
+  }
+
+  // Utility: create choice button
+  function addChoice(text, handler) {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = text;
+    btn.onclick = handler;
+    choicesEl.appendChild(btn);
+  }
+
+  // Combat system (simple)
+  function combat(enemy) {
+    addStory(`You encounter a ${enemy.name}!`);
+    function attack() {
+      const playerAttack = Math.floor(Math.random() * 4) + 1;
+      const enemyAttack = Math.floor(Math.random() * enemy.strength) + 1;
+
+      enemy.hp -= playerAttack;
+      addStory(`You strike the ${enemy.name} for ${playerAttack} damage.`);
+
+      if (enemy.hp <= 0) {
+        addStory(`The ${enemy.name} is defeated!`);
+        player.gold += enemy.gold;
+        addStory(`You found ${enemy.gold} gold.`);
+        clearChoices();
+        addChoice('Continue deeper into the forest', () => goTo('deeper'));
+        return;
+      }
+
+      player.hp -= enemyAttack;
+      addStory(`The ${enemy.name} hits you for ${enemyAttack} damage.`);
+
+      if (player.hp <= 0) {
+        addStory('You have been defeated... Your adventure ends here.');
+        clearChoices();
+        addChoice('Restart Game', startGame);
+        return;
+      }
+
+      updateStatus();
+      clearChoices();
+      addChoice('Attack again', attack);
+      addChoice('Run away', () => {
+        addStory('You flee back to the forest entrance.');
+        player.hp = Math.max(player.hp - 1, 1); // penalty
+        updateStatus();
+        goTo('start');
+      });
+    }
+    updateStatus();
+    clearChoices();
+    addChoice('Attack', attack);
+    addChoice('Run away', () => {
+      addStory('You flee back to the forest entrance.');
+      player.hp = Math.max(player.hp - 1, 1);
+      updateStatus();
+      goTo('start');
+    });
+  }
+
+  // Status update
+  function updateStatus() {
+    const statusLine = `HP: ${player.hp} | Gold: ${player.gold} | Inventory: ${player.inventory.join(', ') || 'Empty'}`;
+    if (!document.getElementById('status')) {
+      const statusDiv = document.createElement('div');
+      statusDiv.id = 'status';
+      statusDiv.style.marginTop = '1rem';
+      statusDiv.style.fontWeight = 'bold';
+      storyEl.appendChild(statusDiv);
+    }
+    document.getElementById('status').textContent = statusLine;
+  }
+
+  // Locations & events
+  const locations = {
+    start: () => {
+      addStory('You stand at the edge of the cursed forest. The air is thick with mist and ominous silence.');
+      addStory('Will you enter the forest or walk away?');
+      clearChoices();
+      addChoice('Enter the forest', () => goTo('forest_entrance'));
+      addChoice('Walk away (End Game)', () => {
+        addStory('You decide this adventure is not for you. Maybe another day...');
+        clearChoices();
+        addChoice('Restart Game', startGame);
+      });
+      updateStatus();
+    },
+    forest_entrance: () => {
+      addStory('The forest looms around you. Paths split ahead.');
+      addStory('To the left, the trees grow thick and dark. To the right, you hear faint running water.');
+      clearChoices();
+      addChoice('Go left into the dark woods', () => goTo('dark_woods'));
+      addChoice('Go right towards the stream', () => goTo('stream'));
+      updateStatus();
+    },
+    dark_woods: () => {
+      addStory('The shadows deepen. Suddenly, a snarling wolf blocks your path!');
+      combat({ name: 'Dire Wolf', hp: 8, strength: 3, gold: 5 });
+    },
+    stream: () => {
+      addStory('You arrive at a babbling stream. The water looks clear and refreshing.');
+      addStory('You drink some water and feel reinvigorated. (+2 HP)');
+      player.hp = Math.min(player.hp + 2, 10);
+      addStory('You see a small shiny object glinting near the bank.');
+      clearChoices();
+      addChoice('Pick up the shiny object', () => {
+        addStory('It’s a magical amulet! You add it to your inventory.');
+        player.inventory.push('Magical Amulet');
+        updateStatus();
+        addChoice('Follow the stream deeper', () => goTo('stream_deep'));
+      });
+      addChoice('Ignore it and move on', () => goTo('stream_deep'));
+      updateStatus();
+    },
+    stream_deep: () => {
+      addStory('Following the stream, you find a clearing with an ancient stone altar.');
+      addStory('On the altar rests the artifact you sought!');
+      clearChoices();
+      addChoice('Take the artifact', () => {
+        addStory('As you touch the artifact, the forest shakes and a ghostly guardian appears!');
+        combat({ name: 'Forest Guardian', hp: 12, strength: 4, gold: 10 });
+      });
+      addChoice('Leave it and escape the forest', () => {
+        addStory('You decide the artifact is too dangerous and leave the forest safely.');
+        addStory('You live to adventure another day.');
+        clearChoices();
+        addChoice('Restart Game', startGame);
+      });
+      updateStatus();
+    },
+    deeper: () => {
+      addStory('Deeper in the forest, the mist thickens. Suddenly, you are ambushed by bandits!');
+      combat({ name: 'Bandit', hp: 10, strength: 3, gold: 7 });
+    }
+  };
+
+  // Go to location
+  function goTo(location) {
+    player.location = location;
+    clearStory();
+    locations[location]();
+  }
+
+  function clearStory() {
+    storyEl.innerHTML = '';
+  }
+
+  // Start game
+  function startGame() {
+    player = {
+      hp: 10,
+      gold: 0,
+      inventory: [],
+      location: 'start',
+    };
+    clearStory();
+    locations.start();
+  }
+
+  startGame();
+
+})();
+</script>
 </body>
 </html>
