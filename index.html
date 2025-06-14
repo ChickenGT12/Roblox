@@ -25,6 +25,20 @@
     padding: 1.5rem;
     box-shadow: 0 0 10px #222;
   }
+  #image-container {
+    width: 100%;
+    height: 250px;
+    margin-bottom: 1rem;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: inset 0 0 10px #0008;
+  }
+  #image-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    user-select: none;
+  }
   #story {
     flex: 1;
     overflow-y: auto;
@@ -64,6 +78,9 @@
 </head>
 <body>
   <div id="game">
+    <div id="image-container">
+      <img id="scene-image" src="" alt="Scene Image" />
+    </div>
     <div id="story"></div>
     <div id="choices"></div>
   </div>
@@ -73,6 +90,7 @@
 (() => {
   const storyEl = document.getElementById('story');
   const choicesEl = document.getElementById('choices');
+  const imageEl = document.getElementById('scene-image');
 
   // Player state
   let player = {
@@ -102,6 +120,12 @@
     btn.textContent = text;
     btn.onclick = handler;
     choicesEl.appendChild(btn);
+  }
+
+  // Update image
+  function setImage(url, alt = 'Scene Image') {
+    imageEl.src = url;
+    imageEl.alt = alt;
   }
 
   // Combat system (simple)
@@ -167,9 +191,10 @@
     document.getElementById('status').textContent = statusLine;
   }
 
-  // Locations & events
+  // Locations & events with images
   const locations = {
     start: () => {
+      setImage('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80', 'Forest edge');
       addStory('You stand at the edge of the cursed forest. The air is thick with mist and ominous silence.');
       addStory('Will you enter the forest or walk away?');
       clearChoices();
@@ -182,6 +207,7 @@
       updateStatus();
     },
     forest_entrance: () => {
+      setImage('https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=800&q=80', 'Forest Path');
       addStory('The forest looms around you. Paths split ahead.');
       addStory('To the left, the trees grow thick and dark. To the right, you hear faint running water.');
       clearChoices();
@@ -190,10 +216,12 @@
       updateStatus();
     },
     dark_woods: () => {
+      setImage('https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=800&q=80', 'Dark Woods');
       addStory('The shadows deepen. Suddenly, a snarling wolf blocks your path!');
       combat({ name: 'Dire Wolf', hp: 8, strength: 3, gold: 5 });
     },
     stream: () => {
+      setImage('https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80', 'Forest Stream');
       addStory('You arrive at a babbling stream. The water looks clear and refreshing.');
       addStory('You drink some water and feel reinvigorated. (+2 HP)');
       player.hp = Math.min(player.hp + 2, 10);
@@ -209,6 +237,7 @@
       updateStatus();
     },
     stream_deep: () => {
+      setImage('https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80', 'Ancient Altar');
       addStory('Following the stream, you find a clearing with an ancient stone altar.');
       addStory('On the altar rests the artifact you sought!');
       clearChoices();
@@ -225,6 +254,7 @@
       updateStatus();
     },
     deeper: () => {
+      setImage('https://images.unsplash.com/photo-1470163395405-d2b2f659f66f?auto=format&fit=crop&w=800&q=80', 'Deep Forest');
       addStory('Deeper in the forest, the mist thickens. Suddenly, you are ambushed by bandits!');
       combat({ name: 'Bandit', hp: 10, strength: 3, gold: 7 });
     }
